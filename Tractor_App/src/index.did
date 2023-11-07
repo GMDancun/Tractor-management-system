@@ -1,0 +1,7 @@
+service: () -> {
+    addFarmer: (record {farmer_lname:text; farmernatid:nat64; farmer_fname:text; phonenumber:nat64; location:text}) -> (variant {Ok:record {farmer_lname:text; farmernatid:nat64; farmerid:text; createdAt:nat64; updatedAt:opt nat64; farmer_fname:text; phonenumber:nat64; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+    deleteFarmer: (text) -> (variant {Ok:record {farmer_lname:text; farmernatid:nat64; farmerid:text; createdAt:nat64; updatedAt:opt nat64; farmer_fname:text; phonenumber:nat64; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+    getFarmer: () -> (variant {Ok:vec record {farmer_lname:text; farmernatid:nat64; farmerid:text; createdAt:nat64; updatedAt:opt nat64; farmer_fname:text; phonenumber:nat64; location:text}; Err:variant {InvalidPayload:text; NotFound:text}}) query;
+    getspecificFarmer: (text) -> (variant {Ok:record {farmer_lname:text; farmernatid:nat64; farmerid:text; createdAt:nat64; updatedAt:opt nat64; farmer_fname:text; phonenumber:nat64; location:text}; Err:variant {InvalidPayload:text; NotFound:text}}) query;
+    updateFarmer: (text, record {farmer_lname:text; farmernatid:nat64; farmer_fname:text; phonenumber:nat64; location:text}) -> (variant {Ok:record {farmer_lname:text; farmernatid:nat64; farmerid:text; createdAt:nat64; updatedAt:opt nat64; farmer_fname:text; phonenumber:nat64; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+}
