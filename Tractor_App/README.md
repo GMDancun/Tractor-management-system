@@ -9,12 +9,12 @@ It is a simple CRUD APP canister. You can always refer to [The Azle Book](https:
 To Run this App locally follow the following steps:
 Step 1: Use the git clone command followed by the link to this repo.
 ```bash
-  git clone https://github.com/GMDancun/Blockchain-HelloWorld.git
+  git clone https://github.com/GMDancun/Tractor-management-system.git
 ```
 
 Step 2: cd to the app directory.
 ```bash
-  cd: Blockchain-HelloWorld/CannisterProject/tractorapp
+  cd: Tractor-management-system/Tractor_App$
 ```
 
 Step 3: Start a replica, which is a local instance of the IC that you can deploy your canisters to:
