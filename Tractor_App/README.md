@@ -1,4 +1,4 @@
-# tractorapp
+# Tractor App
 
 Azle project! This is a group project which we are required to deploy our canister (application) to the Internet Computer (IC) decentralized cloud. 
 It is a simple CRUD APP canister. You can always refer to [The Azle Book](https://demergent-labs.github.io/azle/) for more in-depth documentation.
