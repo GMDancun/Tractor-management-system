@@ -7,8 +7,6 @@ import {
 import {v4 as uuidv4} from 'uuid';
 // This is a global variable that is stored on the heap
 
-// MessagePayload, Message, Err -> Models
-
 
 const FarmerPayload = Record({
     farmernatId: nat64,
@@ -30,26 +28,7 @@ const TractorBookingPayload = Record({
     tractorId: nat64,
 });
 
-const servType = Variant({
-    cropPlanting: text,
-    cropHarvesting: text
-});
 
-// const ServicePayload = Record({
-//     tractorId: text,
-//     farmerId: text,
-//
-//     ServiceType: servType,
-//     // ServiceCategory: text,
-//     SizeofLand: nat64,
-//     // Service_charges: nat64,
-//     // ModeofPayment: text,
-// });
-
-
-// farmernatid: BigInt(farmernatid ?? 0)
-
-// Message
 const Farmer = Record({
     farmerId: text,
     farmernatId: nat64,
@@ -62,16 +41,6 @@ const Farmer = Record({
 
 });
 
-// type ExpectedReturnType = {
-//     tractorModel: string;
-//     tractorbrand: bigint;
-//     tractorId: bigint; // Ensure tractorId is of type bigint
-//     status: boolean;
-//     createdAt: bigint;
-//     updatedAt: Opt<bigint>;
-//     _azleCandidType?: "azleCandidType" | undefined;
-// };
-
 const Tractor = Record({
     tractorId: nat64,
     tractorModel: text,
@@ -83,20 +52,11 @@ const Tractor = Record({
 
 });
 
-// const Service = Record({
-//
-//     ServiceId: nat64,
-//     tractorId: text,
-//     farmerId: text,
-//     ServiceType: servType,
-//     SizeofLand: nat64,
-// });
 
 const TractorBooking = Record({
     bookingId: nat64,
     farmerId: text,
     tractorId: nat64,
-
     returnTractor: bool,
     createdAt: nat64,
     updatedAt: Opt(nat64)
@@ -114,28 +74,20 @@ const Error = Variant({
     TractorReturned: text,
 });
 
-let myServiceId: number = 10000;
 let mytractorId: number = 1001;
 let mybookingId: number = 6200;
 
 
-// Message DB: StableTreeMap
-// orthogonal/Transparent Persistence - it maintain the state
-
+// DB: StableTreeMap
 const FarmerStorage = StableBTreeMap(text, Farmer, 0)
 const TractorStorage = StableBTreeMap(nat64, Tractor, 1)
-// const ServiceStorage = StableBTreeMap(nat64, Service, 2)
 const TractorBookingStorage = StableBTreeMap(nat64, TractorBooking, 3)
 
 
 export default Canister({
     // Query calls complete quickly because they do not go through consensus
 
-
-    // create CRUD Application
-    //C -> one is able to create a resource to the cannister(update), e.g Employees app
-
-    //addMessage: update
+    //addFarmer: update
     // function: type([datatypes for the parameters], Return Type, (parameters)){}
     addFarmer: update([FarmerPayload], Result(Farmer, Error), (farmerdetails) => {
         if (Object.values(farmerdetails).some(v => v === undefined || v === '')) {
@@ -154,9 +106,7 @@ export default Canister({
     }),
 
 
-    // R -> Read resources excisting on the canister(query)
     // Read All Farmers
-
     getFarmer: query([], Result(Vec(Farmer), Error), () => {
         return Ok(FarmerStorage.values());
     }),
@@ -199,11 +149,10 @@ export default Canister({
 
 
     // Tractor Models
-    //CRUD FOR Tractor
-
-    //addMessage: update
+    //addTractor: update
     // function: type([datatypes for the parameters], Return Type, (parameters)){}
     addTractor: update([TractorPayload], Result(Tractor, Error), (tractordetails) => {
+        // checks if the user has filled all the fields
         if (Object.values(tractordetails).some(v => v === undefined || v === '')) {
             return Err({NoRecordtoKeyIn: 'All tractor details must be filled'});
         }
@@ -229,7 +178,7 @@ export default Canister({
 
     }),
 
-    // R -> Read resources existing on the canister(query)
+
     // Read All Farmers
 
     getTractor: query([], Result(Vec(Tractor), Error), () => {
@@ -248,7 +197,7 @@ export default Canister({
     }),
 
 
-    // U -> Update the existing resources(id)
+    // Update the existing resources(id)
     updateTractor: update([nat64, TractorPayload], Result(Tractor, Error), (tractorId, tractordetails) => {
         const updateTractor = TractorStorage.get(tractorId)
         if ("None" in updateTractor) {
@@ -272,41 +221,11 @@ export default Canister({
     }),
 
 
-    // SERVICE MODELS
-    // addService: update([ServicePayload], Result(Service, Error), (servicedetails) => {
-    //
-    //     const service = {
-    //         ServiceId: myServiceId,
-    //         status: false,
-    //         createdAt: ic.time(),
-    //         updatedAt: None, ...servicedetails
-    //     };
-    //     ServiceStorage.insert(myServiceId, service);
-    //     myServiceId += 1;
-    //
-    //     return Ok(service)
-    //
-    //
-    // }),
-    // getService: query([], Result(Vec(Service), Error), () => {
-    //     return Ok(ServiceStorage.values());
-    // }),
-    //
-    // // Read a specific Service(id)
-    // getspecificService: query([nat64], Result(Service, Error), (ServiceId) => {
-    //     const specificService = ServiceStorage.get(ServiceId);
-    //
-    //     if ("None" in specificService) {
-    //         return Err({NotFound: `The service of id ${ServiceId} Not Found`});
-    //     }
-    //
-    //     return Ok(specificService.Some)
-    // }),
 
-
-    // Add Tractor Booking function
+    // Booking a tractor.
     bookTractor: update([TractorBookingPayload], Result(TractorBooking, Error), (bookingpayload) => {
 
+            // checks if the user has filled all the fields
             if (Object.values(bookingpayload).some(v => v === undefined || v === '')) {
                 return Err({NoRecordtoKeyIn: 'All booking details must be filled'});
             }
@@ -400,7 +319,6 @@ export default Canister({
 // Cannister ends
 
 // This code below enables the uuid to work on this app
-// https://justpaste.it/bpfxm
 
 globalThis.crypto = {
     // @ts-ignore
