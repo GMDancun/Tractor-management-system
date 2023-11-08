@@ -14,7 +14,7 @@ Step 1: Use the git clone command followed by the link to this repo.
 
 Step 2: cd to the app directory.
 ```bash
-  cd: Tractor-management-system/Tractor_App$
+  cd: Tractor-management-system/Tractor_App
 ```
 
 Step 3: Start a replica, which is a local instance of the IC that you can deploy your canisters to:
