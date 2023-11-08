@@ -1,4 +1,4 @@
-# tractorapp
+# Tractor App
 
 Azle project! This is a group project which we are required to deploy our canister (application) to the Internet Computer (IC) decentralized cloud. 
 It is a simple CRUD APP canister. You can always refer to [The Azle Book](https://demergent-labs.github.io/azle/) for more in-depth documentation.
@@ -9,7 +9,7 @@ It is a simple CRUD APP canister. You can always refer to [The Azle Book](https:
 To Run this App locally follow the following steps:
 Step 1: Use the git clone command followed by the link to this repo.
 ```bash
-  git clone https://github.com/GMDancun/Blockchain-HelloWorld.git
+  git clone https://github.com/GMDancun/Tractor-management-system.git
 ```
 
 Step 2: cd to the app directory.
