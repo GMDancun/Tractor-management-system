@@ -1,47 +1,34 @@
-# Tractor_App
+# tractorapp
 
-Welcome to your first Azle project! This example project will help you to deploy your first canister (application) to the Internet Computer (IC) decentralized cloud. It is a simple getter/setter canister. You can always refer to [The Azle Book](https://demergent-labs.github.io/azle/) for more in-depth documentation.
+Azle project! This is a group project which we are required to deploy our canister (application) to the Internet Computer (IC) decentralized cloud. 
+It is a simple CRUD APP canister. You can always refer to [The Azle Book](https://demergent-labs.github.io/azle/) for more in-depth documentation.
 
 `dfx` is the tool you will use to interact with the IC locally and on mainnet. If you don't already have it installed:
 
+
+To Run this App locally follow the following steps:
+Step 1: Use the git clone command followed by the link to this repo.
 ```bash
-npm run dfx_install
+  git clone https://github.com/GMDancun/Blockchain-HelloWorld.git
 ```
 
-Next you will want to start a replica, which is a local instance of the IC that you can deploy your canisters to:
-
+Step 2: cd to the app directory.
 ```bash
-npm run replica_start
+  cd: Blockchain-HelloWorld/CannisterProject/tractorapp
 ```
 
-If you ever want to stop the replica:
-
+Step 3: Start a replica, which is a local instance of the IC that you can deploy your canisters to:
 ```bash
-npm run replica_stop
+  dfx start --background --clean
 ```
 
-Now you can deploy your canister locally:
-
+Step 4: Install the Dependencies:
 ```bash
-npm install
-npm run canister_deploy_local
+    npm install
 ```
 
-To call the methods on your canister:
-
+Step 5: Now you can deploy your canister locally:
 ```bash
-npm run canister_call_get_message
-npm run canister_call_set_message
+    dfx deploy
 ```
 
-If you run the above commands and then call `npm run canister_call_get_message` you should see:
-
-```bash
-("Hello world!")
-```
-
-Assuming you have [created a cycles wallet](https://internetcomputer.org/docs/current/developer-docs/quickstart/network-quickstart) and funded it with cycles, you can deploy to mainnet like this:
-
-```bash
-npm run canister_deploy_mainnet
-```
