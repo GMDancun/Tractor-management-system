@@ -14,198 +14,234 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var azle_1 = require("azle");
 var uuid_1 = require("uuid");
 // This is a global variable that is stored on the heap
-// MessagePayload, Message, Err -> Models
 var FarmerPayload = (0, azle_1.Record)({
-    farmernatid: azle_1.nat64,
-    farmer_fname: azle_1.text,
-    farmer_lname: azle_1.text,
+    farmernatId: azle_1.nat64,
+    farmer_Fname: azle_1.text,
+    farmer_Lname: azle_1.text,
     location: azle_1.text,
-    phonenumber: azle_1.nat64,
+    phoneNumber: azle_1.nat64,
 });
 var TractorPayload = (0, azle_1.Record)({
     tractorModel: azle_1.text,
-    tractorbrand: azle_1.nat64,
+    tractorBrand: azle_1.text,
 });
-var servType = (0, azle_1.Variant)({
-    cropPlanting: azle_1.text,
-    cropHarvesting: azle_1.text
+var TractorBookingPayload = (0, azle_1.Record)({
+    farmerId: azle_1.text,
+    tractorId: azle_1.nat64,
 });
-var ServicePayload = (0, azle_1.Record)({
-    tractorid: azle_1.text,
-    farmerid: azle_1.text,
-    ServiceType: servType,
-    // ServiceCategory: text,
-    SizeofLand: azle_1.nat64,
-    // Service_charges: nat64,
-    // ModeofPayment: text,
-});
-// const servCategory = Variant({
-//     cropPlanting: text,
-//     cropHarvesting: text
-// });
-// const serviceCategory = Variant({
-//     Fire: Null,
-//     ThumbsUp: Null,
-//     Emotion: Emotion
-// });
-// Message
 var Farmer = (0, azle_1.Record)({
-    farmerid: azle_1.text,
-    farmernatid: azle_1.nat64,
-    farmer_fname: azle_1.text,
-    farmer_lname: azle_1.text,
+    farmerId: azle_1.text,
+    farmernatId: azle_1.nat64,
+    farmer_Fname: azle_1.text,
+    farmer_Lname: azle_1.text,
     location: azle_1.text,
-    phonenumber: azle_1.nat64,
+    phoneNumber: azle_1.nat64,
     createdAt: azle_1.nat64,
     updatedAt: (0, azle_1.Opt)(azle_1.nat64)
 });
 var Tractor = (0, azle_1.Record)({
-    tractorModel: azle_1.text,
-    tractorbrand: azle_1.nat64,
     tractorId: azle_1.nat64,
+    tractorModel: azle_1.text,
+    tractorBrand: azle_1.text,
     status: azle_1.bool,
     createdAt: azle_1.nat64,
     updatedAt: (0, azle_1.Opt)(azle_1.nat64)
 });
-var Service = (0, azle_1.Record)({
-    Serviceid: azle_1.nat64,
-    tractorid: azle_1.text,
-    farmerid: azle_1.text,
-    ServiceType: servType,
-    // ServiceCategory: text,
-    SizeofLand: azle_1.nat64,
-    // Service_charges: nat64,
-    // ModeofPayment: text,
+var TractorBooking = (0, azle_1.Record)({
+    bookingId: azle_1.nat64,
+    farmerId: azle_1.text,
+    tractorId: azle_1.nat64,
+    returnTractor: azle_1.bool,
+    createdAt: azle_1.nat64,
+    updatedAt: (0, azle_1.Opt)(azle_1.nat64)
 });
-//
-// const Message = Record({
-//     id: text,
-//     title: text,
-//     body: text,
-//     attchmentUrl: text,
-//    b56ff121-81aa-4b07-a00d-a096182b894c createdAt: nat64,
-//     updatedAt: Opt(nat64)
-//
-// });
 // Error
 var Error = (0, azle_1.Variant)({
     NotFound: azle_1.text,
-    InvalidPayload: azle_1.text
+    InvalidPayload: azle_1.text,
+    TractorNotAvailable: azle_1.text,
+    TractorBookingNotFound: azle_1.text,
+    TractorNotFound: azle_1.text,
+    NoRecordtoKeyIn: azle_1.text,
+    TractorReturned: azle_1.text,
 });
-var myServiceId = 10000;
-var myid = 1001;
-// Message DB: StableTreeMap
-// orthogonal/Transparent Persistence - it maintain the state
-var FarmerStorage = (0, azle_1.StableBTreeMap)(azle_1.text, Farmer, 1);
-var TractorStorage = (0, azle_1.StableBTreeMap)(azle_1.nat64, Tractor, 2);
-var ServiceStorage = (0, azle_1.StableBTreeMap)(azle_1.nat64, Service, 3);
+var mytractorId = 1001;
+var mybookingId = 6200;
+// DB: StableTreeMap
+var FarmerStorage = (0, azle_1.StableBTreeMap)(azle_1.text, Farmer, 0);
+var TractorStorage = (0, azle_1.StableBTreeMap)(azle_1.nat64, Tractor, 1);
+var TractorBookingStorage = (0, azle_1.StableBTreeMap)(azle_1.nat64, TractorBooking, 3);
 exports.default = (0, azle_1.Canister)({
     // Query calls complete quickly because they do not go through consensus
-    // create CRUD Application
-    //C -> one is able to create a resource to the cannister(update), e.g Employees app
-    //addMessage: update
+    //addFarmer: update
     // function: type([datatypes for the parameters], Return Type, (parameters)){}
     addFarmer: (0, azle_1.update)([FarmerPayload], (0, azle_1.Result)(Farmer, Error), function (farmerdetails) {
-        var farmer = __assign({ farmerid: (0, uuid_1.v4)(), createdAt: azle_1.ic.time(), updatedAt: azle_1.None }, farmerdetails);
-        FarmerStorage.insert(farmer.farmerid, farmer);
-        return (0, azle_1.Ok)(farmer);
+        if (Object.values(farmerdetails).some(function (v) { return v === undefined || v === ''; })) {
+            return (0, azle_1.Err)({ NoRecordtoKeyIn: 'All farmer details must be filled' });
+        }
+        try {
+            var farmer = __assign({ farmerId: (0, uuid_1.v4)(), createdAt: azle_1.ic.time(), updatedAt: azle_1.None }, farmerdetails);
+            FarmerStorage.insert(farmer.farmerId, farmer);
+            return (0, azle_1.Ok)(farmer);
+        }
+        catch (error) {
+            return (0, azle_1.Err)({ NoRecordtoKeyIn: "The farmer of details not filled" });
+        }
     }),
-    // R -> Read resources excisting on the canister(query)
     // Read All Farmers
     getFarmer: (0, azle_1.query)([], (0, azle_1.Result)((0, azle_1.Vec)(Farmer), Error), function () {
         return (0, azle_1.Ok)(FarmerStorage.values());
     }),
     // Read a specific Farmer(id)
-    getspecificFarmer: (0, azle_1.query)([azle_1.text], (0, azle_1.Result)(Farmer, Error), function (farmerid) {
-        var specificFarmer = FarmerStorage.get(farmerid);
+    getspecificFarmer: (0, azle_1.query)([azle_1.text], (0, azle_1.Result)(Farmer, Error), function (farmerId) {
+        var specificFarmer = FarmerStorage.get(farmerId);
         if ("None" in specificFarmer) {
-            return (0, azle_1.Err)({ NotFound: "The farmer of id ".concat(farmerid, " Not Found") });
+            return (0, azle_1.Err)({ NotFound: "The farmer of id ".concat(farmerId, " Not Found") });
         }
         return (0, azle_1.Ok)(specificFarmer.Some);
     }),
     // U -> Update the existing resources(id)
-    updateFarmer: (0, azle_1.update)([azle_1.text, FarmerPayload], (0, azle_1.Result)(Farmer, Error), function (farmerid, farmerdetails) {
-        var updateFarmer = FarmerStorage.get(farmerid);
+    updateFarmer: (0, azle_1.update)([azle_1.text, FarmerPayload], (0, azle_1.Result)(Farmer, Error), function (farmerId, farmerdetails) {
+        var updateFarmer = FarmerStorage.get(farmerId);
         if ("None" in updateFarmer) {
-            return (0, azle_1.Err)({ NotFound: "The farmer of id {farmerid} Not Found" });
+            return (0, azle_1.Err)({ NotFound: "The farmer of id {farmerId} Not Found" });
         }
         var farmer = updateFarmer.Some;
         var modifiedFarmer = __assign(__assign(__assign({}, farmer), farmerdetails), { updatedAt: azle_1.None });
-        FarmerStorage.insert(farmer.farmerid, modifiedFarmer);
+        FarmerStorage.insert(farmer.farmerId, modifiedFarmer);
         return (0, azle_1.Ok)(modifiedFarmer);
     }),
     //D -> Delete a resource/
-    deleteFarmer: (0, azle_1.update)([azle_1.text], (0, azle_1.Result)(Farmer, Error), function (farmerid) {
-        var deleteFarmer = FarmerStorage.remove(farmerid);
+    deleteFarmer: (0, azle_1.update)([azle_1.text], (0, azle_1.Result)(Farmer, Error), function (farmerId) {
+        var deleteFarmer = FarmerStorage.remove(farmerId);
         if ("None" in deleteFarmer) {
-            return (0, azle_1.Err)({ NotFound: "The farmer of id {farmerid} Not Found" });
+            return (0, azle_1.Err)({ NotFound: "The farmer of id {farmerId} Not Found" });
         }
         return (0, azle_1.Ok)(deleteFarmer.Some);
     }),
     // Tractor Models
-    //CRUD FOR Tractor
-    //addMessage: update
+    //addTractor: update
     // function: type([datatypes for the parameters], Return Type, (parameters)){}
     addTractor: (0, azle_1.update)([TractorPayload], (0, azle_1.Result)(Tractor, Error), function (tractordetails) {
-        var tractor = __assign({ tractorId: myid, status: false, createdAt: azle_1.ic.time(), updatedAt: azle_1.None }, tractordetails);
-        TractorStorage.insert(myid, tractor);
-        myid += 1;
-        return (0, azle_1.Ok)(tractor);
+        // checks if the user has filled all the fields
+        if (Object.values(tractordetails).some(function (v) { return v === undefined || v === ''; })) {
+            return (0, azle_1.Err)({ NoRecordtoKeyIn: 'All tractor details must be filled' });
+        }
+        try {
+            // Creating tractor object with provided details and additional properties
+            var tractor = __assign({ tractorId: mytractorId, status: true, createdAt: azle_1.ic.time(), updatedAt: azle_1.None }, tractordetails);
+            //insert Tractor details into Storage
+            TractorStorage.insert(mytractorId, tractor);
+            mytractorId += 1;
+            return azle_1.Result.Ok(tractor);
+        }
+        catch (error) {
+            return azle_1.Result.Err({ InvalidPayload: "Invalid tractor payload" });
+        }
     }),
-    // R -> Read resources excisting on the canister(query)
     // Read All Farmers
     getTractor: (0, azle_1.query)([], (0, azle_1.Result)((0, azle_1.Vec)(Tractor), Error), function () {
         return (0, azle_1.Ok)(TractorStorage.values());
     }),
-    // Read a specific Farmer(id)
-    getspecificTractor: (0, azle_1.query)([azle_1.nat64], (0, azle_1.Result)(Tractor, Error), function (tractorid) {
-        var specificTractor = FarmerStorage.get(tractorid);
+    // Read a specific Tractor(id)
+    getspecificTractor: (0, azle_1.query)([azle_1.nat64], (0, azle_1.Result)(Tractor, Error), function (tractorId) {
+        var specificTractor = TractorStorage.get(tractorId);
         if ("None" in specificTractor) {
-            return (0, azle_1.Err)({ NotFound: "The farmer of id ".concat(tractorid, " Not Found") });
+            return (0, azle_1.Err)({ NotFound: "The tractor of id ".concat(tractorId, " Not Found") });
         }
         return (0, azle_1.Ok)(specificTractor.Some);
     }),
-    // U -> Update the existing resources(id)
-    updateTractor: (0, azle_1.update)([azle_1.nat64, TractorPayload], (0, azle_1.Result)(Farmer, Error), function (tractorid, tractordetails) {
-        var updateTractor = TractorStorage.get(tractorid);
+    // Update the existing resources(id)
+    updateTractor: (0, azle_1.update)([azle_1.nat64, TractorPayload], (0, azle_1.Result)(Tractor, Error), function (tractorId, tractordetails) {
+        var updateTractor = TractorStorage.get(tractorId);
         if ("None" in updateTractor) {
-            return (0, azle_1.Err)({ NotFound: "The tractor of id {tractorid} Not Found" });
+            return (0, azle_1.Err)({ NotFound: "The tractor of id {tractorId} Not Found" });
         }
         var tractor = updateTractor.Some;
         var modifiedTractor = __assign(__assign(__assign({}, tractor), tractordetails), { updatedAt: azle_1.None });
-        TractorStorage.insert(tractor.tractorid, modifiedTractor);
+        TractorStorage.insert(tractor.tractorId, modifiedTractor);
         return (0, azle_1.Ok)(modifiedTractor);
     }),
-    //D -> Delete a resource/
-    deleteTractor: (0, azle_1.update)([azle_1.nat64], (0, azle_1.Result)(Farmer, Error), function (tractorid) {
-        var deleteTractor = TractorStorage.remove(tractorid);
+    deleteTractor: (0, azle_1.update)([azle_1.nat64], (0, azle_1.Result)(Tractor, Error), function (tractorId) {
+        var deleteTractor = TractorStorage.remove(tractorId);
         if ("None" in deleteTractor) {
-            return (0, azle_1.Err)({ NotFound: "The tractor of id {tractorid} Not Found" });
+            return (0, azle_1.Err)({ NotFound: "The tractor of id {tractorId} Not Found" });
         }
         return (0, azle_1.Ok)(deleteTractor.Some);
     }),
-    // SERVICE MODELS
-    addService: (0, azle_1.update)([ServicePayload], (0, azle_1.Result)(Service, Error), function (servicedetails) {
-        var service = __assign({ Serviceid: myServiceId, status: false, createdAt: azle_1.ic.time(), updatedAt: azle_1.None }, servicedetails);
-        ServiceStorage.insert(myServiceId, service);
-        myServiceId += 1;
-        return (0, azle_1.Ok)(service);
-    }),
-    getService: (0, azle_1.query)([], (0, azle_1.Result)((0, azle_1.Vec)(Service), Error), function () {
-        return (0, azle_1.Ok)(ServiceStorage.values());
-    }),
-    // Read a specific Farmer(id)
-    getspecificService: (0, azle_1.query)([azle_1.nat64], (0, azle_1.Result)(Service, Error), function (Serviceid) {
-        var specificService = ServiceStorage.get(Serviceid);
-        if ("None" in specificService) {
-            return (0, azle_1.Err)({ NotFound: "The farmer of id ".concat(Serviceid, " Not Found") });
+    // Booking a tractor.
+    bookTractor: (0, azle_1.update)([TractorBookingPayload], (0, azle_1.Result)(TractorBooking, Error), function (bookingpayload) {
+        // checks if the user has filled all the fields
+        if (Object.values(bookingpayload).some(function (v) { return v === undefined || v === ''; })) {
+            return (0, azle_1.Err)({ NoRecordtoKeyIn: 'All booking details must be filled' });
         }
-        return (0, azle_1.Ok)(specificService.Some);
+        try {
+            var farmerId = bookingpayload.farmerId, tractorId = bookingpayload.tractorId;
+            var bookingId = mybookingId;
+            var mytractor = TractorStorage.get(tractorId);
+            if ("None" in mytractor) {
+                return (0, azle_1.Err)({ TractorNotFound: "Tractor with ID ".concat(tractorId, " not found") });
+            }
+            var tractorData = mytractor.Some;
+            if (tractorData.status) {
+                var booking = {
+                    bookingId: mybookingId,
+                    farmerId: bookingpayload.farmerId,
+                    tractorId: bookingpayload.tractorId,
+                    returnTractor: false,
+                    createdAt: azle_1.ic.time(),
+                    updatedAt: azle_1.None
+                };
+                TractorBookingStorage.insert(mybookingId, booking);
+                mybookingId += 1;
+                var modifiedTractor = __assign(__assign(__assign({}, tractorData), tractorData), { status: false });
+                TractorStorage.insert(modifiedTractor.tractorId, modifiedTractor);
+                return (0, azle_1.Ok)(booking);
+            }
+            else {
+                return (0, azle_1.Err)({ TractorNotAvailable: 'The Tractor is not available for booking' });
+            }
+        }
+        catch (error) {
+            return (0, azle_1.Err)({ TractorNotAvailable: 'An error occured}' });
+            // return "failed";
+        }
+    }),
+    // Cancel Tractor Booking function
+    returnTractorBooked: (0, azle_1.update)([azle_1.nat64], (0, azle_1.Result)(TractorBooking, Error), function (bookingId) {
+        try {
+            var booking = TractorBookingStorage.get(bookingId);
+            if ("None" in booking) {
+                return (0, azle_1.Err)({ TractorNotAvailable: "Booking not found" });
+            }
+            var bookingDetails = booking.Some;
+            if (!(bookingDetails.returnTractor)) {
+                var myoldtractor = TractorStorage.get(bookingDetails.tractorId);
+                var tractorData = myoldtractor.Some;
+                if (tractorData) {
+                    // tractorData.status = false;
+                    var updated_tractor = __assign(__assign(__assign({}, tractorData), tractorData), { status: true });
+                    TractorStorage.insert(bookingDetails.tractorId, updated_tractor);
+                    var updated_booking = __assign(__assign(__assign({}, bookingDetails), bookingDetails), { returnTractor: true });
+                    TractorBookingStorage.insert(updated_booking.bookingId, updated_booking);
+                    return (0, azle_1.Ok)(updated_booking);
+                }
+                return (0, azle_1.Err)({ TractorReturned: "Tractor booking with ID ".concat(bookingId, " returned") });
+            }
+            else {
+                return (0, azle_1.Err)({ TractorBookingNotFound: "Tractor booking with ID ".concat(bookingId, " not found") });
+            }
+        }
+        catch (error) {
+            return (0, azle_1.Err)({ TractorBookingNotFound: "Something Went Wrong Please try again" });
+        }
+    }),
+    getBooking: (0, azle_1.query)([], (0, azle_1.Result)((0, azle_1.Vec)(TractorBooking), Error), function () {
+        return (0, azle_1.Ok)(TractorBookingStorage.values());
     }),
 });
 // Cannister ends
 // This code below enables the uuid to work on this app
-// https://justpaste.it/bpfxm
 globalThis.crypto = {
     // @ts-ignore
     getRandomValues: function () {
