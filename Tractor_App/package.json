@@ -10,7 +10,7 @@
         "canister_call_set_message": "dfx canister call Tractor_App setMessage '(\"Hello world!\")'"
     },
     "dependencies": {
-        "azle": "0.18.6"
+        "azle": "0.18.6",
+        "typescript": "^5.2.2"
     }
 }
-

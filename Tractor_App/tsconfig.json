@@ -1,10 +1,14 @@
 {
-    "compilerOptions": {
-        "strict": true,
-        "target": "ESNext", // ES2020
-        "moduleResolution": "node",
-        "allowJs": true,
-        "outDir": "HACK_BECAUSE_OF_ALLOW_JS"
-    }
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2020",
+    // ESNext
+    "moduleResolution": "node",
+    "allowJs": true,
+    "outDir": "HACK_BECAUSE_OF_ALLOW_JS"
+  },
+
 }
+
+
 

@@ -1,90 +1,26 @@
+// This file contains all functions
+
 import {
-    Canister, query, text, update, Void,
-    Record, StableBTreeMap, Ok, None,
-    Some, Err, Vec, Result, nat64,
-    ic, Opt, Variant, bool, int64
+    Canister, query, text, update,
+    Ok, None,
+    Err, Vec, Result, nat64, ic,
 } from 'azle';
+
 import {v4 as uuidv4} from 'uuid';
+import {FarmerPayload, TractorPayload, TractorBookingPayload} from './payload';
+import {Farmer, Tractor, TractorBooking} from './blueprints'
+import {Error} from "./errorblueprint";
+import {FarmerStorage, TractorStorage, TractorBookingStorage} from './db'
+
+
 // This is a global variable that is stored on the heap
-
-
-const FarmerPayload = Record({
-    farmernatId: nat64,
-    farmer_Fname: text,
-    farmer_Lname: text,
-    location: text,
-    phoneNumber: nat64,
-
-});
-
-const TractorPayload = Record({
-    tractorModel: text,
-    tractorBrand: text,
-
-});
-
-const TractorBookingPayload = Record({
-    farmerId: text,
-    tractorId: nat64,
-});
-
-
-const Farmer = Record({
-    farmerId: text,
-    farmernatId: nat64,
-    farmer_Fname: text,
-    farmer_Lname: text,
-    location: text,
-    phoneNumber: nat64,
-    createdAt: nat64,
-    updatedAt: Opt(nat64)
-
-});
-
-const Tractor = Record({
-    tractorId: nat64,
-    tractorModel: text,
-    tractorBrand: text,
-    status: bool,
-    createdAt: nat64,
-    updatedAt: Opt(nat64)
-
-
-});
-
-
-const TractorBooking = Record({
-    bookingId: nat64,
-    farmerId: text,
-    tractorId: nat64,
-    returnTractor: bool,
-    createdAt: nat64,
-    updatedAt: Opt(nat64)
-});
-
-
-// Error
-const Error = Variant({
-    NotFound: text,
-    InvalidPayload: text,
-    TractorNotAvailable: text,
-    TractorBookingNotFound: text,
-    TractorNotFound: text,
-    NoRecordtoKeyIn: text,
-    TractorReturned: text,
-});
-
-let mytractorId: number = 1001;
-let mybookingId: number = 6200;
-
-
-// DB: StableTreeMap
-const FarmerStorage = StableBTreeMap(text, Farmer, 0)
-const TractorStorage = StableBTreeMap(nat64, Tractor, 1)
-const TractorBookingStorage = StableBTreeMap(nat64, TractorBooking, 3)
+// let mytractorId: nat64 = 1001;
+let mytractorId: bigint = BigInt(1000);
+let mybookingId: bigint = BigInt(6200);
 
 
 export default Canister({
+
     // Query calls complete quickly because they do not go through consensus
 
     //addFarmer: update
@@ -131,7 +67,19 @@ export default Canister({
         }
 
         const farmer = updateFarmer.Some;
-        const modifiedFarmer = {...farmer, ...farmerdetails, updatedAt: None};
+
+        const modifiedFarmer = {
+            ...farmer,
+            // farmerId: farmer.farmerId,
+
+            ...farmerdetails,
+            // farmernatId: farmerdetails.farmernatId,
+            // farmer_Fname: farmerdetails.farmer_Fname,
+            // farmer_Lname: farmerdetails.farmer_Lname,
+            // location: farmerdetails.location,
+            // phoneNumber: farmerdetails.phoneNumber,
+            // updatedAt: None
+        };
 
         FarmerStorage.insert(farmer.farmerId, modifiedFarmer)
         return Ok(modifiedFarmer)
@@ -152,7 +100,7 @@ export default Canister({
     //addTractor: update
     // function: type([datatypes for the parameters], Return Type, (parameters)){}
     addTractor: update([TractorPayload], Result(Tractor, Error), (tractordetails) => {
-        // checks if the user has filled all the fields
+
         if (Object.values(tractordetails).some(v => v === undefined || v === '')) {
             return Err({NoRecordtoKeyIn: 'All tractor details must be filled'});
         }
@@ -164,16 +112,23 @@ export default Canister({
                 tractorId: mytractorId,
                 status: true,
                 createdAt: ic.time(),
-                updatedAt: None, ...tractordetails
+                updatedAt: None,
+                ...tractordetails
+                // Assign individual properties from tractordetails
+                // tractorModel: tractordetails.tractorModel,
+                // tractorBrand: tractordetails.tractorBrand,
+
+
             };
+
 
             //insert Tractor details into Storage
             TractorStorage.insert(mytractorId, tractor);
-            mytractorId += 1;
+            mytractorId = BigInt(mytractorId + BigInt(1));
 
             return Result.Ok(tractor);
         } catch (error) {
-            return Result.Err({InvalidPayload: "Invalid tractor payload"});
+            return Result.Err({InvalidTractorPayload: "Invalid tractor payload"});
         }
 
     }),
@@ -181,144 +136,151 @@ export default Canister({
 
     // Read All Farmers
 
-    getTractor: query([], Result(Vec(Tractor), Error), () => {
-        return Ok(TractorStorage.values());
-    }),
+    getTractor:
+        query([], Result(Vec(Tractor), Error), () => {
+            return Ok(TractorStorage.values());
+        }),
 
     // Read a specific Tractor(id)
-    getspecificTractor: query([nat64], Result(Tractor, Error), (tractorId) => {
-        const specificTractor = TractorStorage.get(tractorId)
+    getspecificTractor:
+        query([nat64], Result(Tractor, Error), (tractorId) => {
+            const specificTractor = TractorStorage.get(tractorId)
 
-        if ("None" in specificTractor) {
-            return Err({NotFound: `The tractor of id ${tractorId} Not Found`})
-        }
+            if ("None" in specificTractor) {
+                return Err({NotFound: `The tractor of id ${tractorId} Not Found`})
+            }
 
-        return Ok(specificTractor.Some)
-    }),
+            return Ok(specificTractor.Some)
+        }),
 
 
     // Update the existing resources(id)
-    updateTractor: update([nat64, TractorPayload], Result(Tractor, Error), (tractorId, tractordetails) => {
-        const updateTractor = TractorStorage.get(tractorId)
-        if ("None" in updateTractor) {
-            return Err({NotFound: `The tractor of id {tractorId} Not Found`});
-        }
+    updateTractor:
+        update([nat64, TractorPayload], Result(Tractor, Error), (tractorId, tractordetails) => {
+            const updateTractor = TractorStorage.get(tractorId)
+            if ("None" in updateTractor) {
+                return Err({NotFound: `The tractor of id {tractorId} Not Found`});
+            }
 
-        const tractor = updateTractor.Some;
-        const modifiedTractor = {...tractor, ...tractordetails, updatedAt: None};
+            const tractor = updateTractor.Some;
+            const modifiedTractor = {...tractor, ...tractordetails, updatedAt: None};
 
-        TractorStorage.insert(tractor.tractorId, modifiedTractor)
-        return Ok(modifiedTractor)
-    }),
+            TractorStorage.insert(tractor.tractorId, modifiedTractor)
+            return Ok(modifiedTractor)
+        }),
 
 
-    deleteTractor: update([nat64], Result(Tractor, Error), (tractorId) => {
-        const deleteTractor = TractorStorage.remove(tractorId);
-        if ("None" in deleteTractor) {
-            return Err({NotFound: `The tractor of id {tractorId} Not Found`});
-        }
-        return Ok(deleteTractor.Some)
-    }),
-
+    deleteTractor:
+        update([nat64], Result(Tractor, Error), (tractorId) => {
+            const deleteTractor = TractorStorage.remove(tractorId);
+            if ("None" in deleteTractor) {
+                return Err({NotFound: `The tractor of id {tractorId} Not Found`});
+            }
+            return Ok(deleteTractor.Some)
+        }),
 
 
     // Booking a tractor.
-    bookTractor: update([TractorBookingPayload], Result(TractorBooking, Error), (bookingpayload) => {
+    bookTractor:
+        update([TractorBookingPayload], Result(TractorBooking, Error), (bookingpayload) => {
 
-            // checks if the user has filled all the fields
-            if (Object.values(bookingpayload).some(v => v === undefined || v === '')) {
-                return Err({NoRecordtoKeyIn: 'All booking details must be filled'});
-            }
-
-            try {
-                const {farmerId, tractorId} = bookingpayload;
-                const bookingId = mybookingId;
-
-                let mytractor = TractorStorage.get(tractorId);
-                if ("None" in mytractor) {
-                    return Err({TractorNotFound: `Tractor with ID ${tractorId} not found`});
-                }
-                const tractorData = mytractor.Some;
-                if (tractorData.status) {
-
-                    const booking = {
-                        bookingId: mybookingId,
-                        farmerId: bookingpayload.farmerId,
-                        tractorId: bookingpayload.tractorId,
-                        returnTractor: false,
-                        createdAt: ic.time(),
-                        updatedAt: None
-                    };
-
-
-                    TractorBookingStorage.insert(mybookingId, booking);
-                    mybookingId += 1;
-
-                    const modifiedTractor = {...tractorData, ...tractorData, status: false};
-
-                    TractorStorage.insert(modifiedTractor.tractorId, modifiedTractor)
-                    return Ok(booking);
-                } else {
-                    return Err({TractorNotAvailable: 'The Tractor is not available for booking'});
+                // checks if the user has filled all the fields
+                if (Object.values(bookingpayload).some(v => v === undefined || v === '')) {
+                    return Err({NoRecordtoKeyIn: 'All booking details must be filled'});
                 }
 
-            } catch (error) {
-                return Err({TractorNotAvailable: 'An error occured}'});
-                // return "failed";
-            }
+                try {
+                    const {farmerId, tractorId} = bookingpayload;
+                    const bookingId = mybookingId;
 
-        }
-    ),
+                    let mytractor = TractorStorage.get(tractorId);
+                    if ("None" in mytractor) {
+                        return Err({TractorNotFound: `Tractor with ID ${tractorId} not found`});
+                    }
+                    const tractorData = mytractor.Some;
+                    if (tractorData.status) {
+
+                        const booking = {
+                            bookingId: bookingId,
+                            farmerId: farmerId,
+                            tractorId: tractorId,
+                            returnTractor: false,
+                            createdAt: ic.time(),
+                            updatedAt: None
+                        };
+
+
+                        TractorBookingStorage.insert(bookingId, booking);
+                        mybookingId = BigInt(mybookingId + BigInt(1));
+
+                        const modifiedTractor = {...tractorData, ...tractorData, status: false};
+
+                        TractorStorage.insert(modifiedTractor.tractorId, modifiedTractor)
+                        return Ok(booking);
+                    } else {
+                        return Err({TractorNotAvailable: 'The Tractor is not available for booking'});
+                    }
+
+                } catch (error) {
+                    return Err({TractorNotAvailable: 'An error occured}'});
+                    // return "failed";
+                }
+
+            }
+        ),
 
 
     // Cancel Tractor Booking function
 
-    returnTractorBooked: update([nat64], Result(TractorBooking, Error), (bookingId) => {
-        try {
-            const booking = TractorBookingStorage.get(bookingId);
-            if ("None" in booking) {
-                return Err({TractorNotAvailable: "Booking not found"})
-            }
-
-            let bookingDetails = booking.Some;
-            if (!(bookingDetails.returnTractor)) {
-                const myoldtractor = TractorStorage.get(bookingDetails.tractorId);
-                const tractorData = myoldtractor.Some;
-                if (tractorData) {
-                    // tractorData.status = false;
-                    const updated_tractor = {...tractorData, ...tractorData, status: true};
-                    TractorStorage.insert(bookingDetails.tractorId, updated_tractor);
-
-
-                    const updated_booking = {...bookingDetails, ...bookingDetails, returnTractor: true};
-                    TractorBookingStorage.insert(updated_booking.bookingId, updated_booking);
-
-                    return Ok(updated_booking);
+    returnTractorBooked:
+        update([nat64], Result(TractorBooking, Error), (bookingId) => {
+            try {
+                const booking = TractorBookingStorage.get(bookingId);
+                if ("None" in booking) {
+                    return Err({TractorNotAvailable: "Booking not found"})
                 }
 
-                return Err({TractorReturned: `Tractor booking with ID ${bookingId} returned`});
+                let bookingDetails = booking.Some;
+                if (!(bookingDetails.returnTractor)) {
+                    const myoldtractor = TractorStorage.get(bookingDetails.tractorId);
+                    const tractorData = myoldtractor.Some;
+                    if (tractorData) {
+                        // tractorData.status = false;
+                        const updated_tractor = {...tractorData, ...tractorData, status: true};
+                        TractorStorage.insert(bookingDetails.tractorId, updated_tractor);
 
-            } else {
-                return Err({TractorBookingNotFound: `Tractor booking with ID ${bookingId} not found`});
+
+                        const updated_booking = {...bookingDetails, ...bookingDetails, returnTractor: true};
+                        TractorBookingStorage.insert(updated_booking.bookingId, updated_booking);
+
+                        return Ok(updated_booking);
+                    }
+
+                    return Err({TractorReturned: `Tractor booking with ID ${bookingId} returned`});
+
+                } else {
+                    return Err({TractorBookingNotFound: `Tractor booking with ID ${bookingId} not found`});
+                }
+            } catch (error) {
+                return Err({TractorBookingNotFound: `Something Went Wrong Please try again`});
             }
-        } catch (error) {
-            return Err({TractorBookingNotFound: `Something Went Wrong Please try again`});
-        }
 
 
-    }),
+        }),
 
-    getBooking: query([], Result(Vec(TractorBooking), Error), () => {
-        return Ok(TractorBookingStorage.values()
-        );
+    getBooking:
+        query([], Result(Vec(TractorBooking), Error), () => {
+            return Ok(TractorBookingStorage.values()
+            );
 
 
-    }),
+        }),
 
 });
 // Cannister ends
 
 // This code below enables the uuid to work on this app
+
 
 globalThis.crypto = {
     // @ts-ignore
